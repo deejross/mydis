@@ -35,9 +35,18 @@ These ports are required for proper cluster operation and should not be exposed 
 
 **NOTE**: While the Raft port is configurable, the RPC port will always be the Raft port number, plus one. This is required for instances to be able to discover what port to use for RPC communications.
 
+## Storage Backends
+The storage implementation is abstracted into an interface to allow for supporting multiple different storage backends, depending on your needs.
+
+Currently supported:
+* [bbolt](https://github.com/etcd-io/bbolt) (default) - Forked from the now deprecated BoltDB, maintained by Etcd.
+
 # TODO
 * KV API for higher-level Redis-like operations
+* Snapshot & Restore
+* Go API client (for when embedded into an application)
 * HTTP API
 * Redis API (https://github.com/tidwall/redcon)
 * Authentication with tokens that can be limited to certain key prefixes (ACLs)
 * Raft/RPC symetric encryption
+* Additional storage backends (perhaps BadgerDB?)

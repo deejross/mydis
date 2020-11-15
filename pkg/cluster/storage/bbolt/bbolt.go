@@ -175,11 +175,6 @@ func (b *BoltStore) DB() *bbolt.DB {
 	return b.conn
 }
 
-// BucketKV returns the name of the KV bucket.
-func (b *BoltStore) BucketKV() []byte {
-	return bucketKV
-}
-
 // Close gracefully closes the DB connection.
 func (b *BoltStore) Close() error {
 	if !b.config.AutoSync {
