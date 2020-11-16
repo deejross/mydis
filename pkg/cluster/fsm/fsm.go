@@ -152,6 +152,10 @@ func CommandResultError(err error) *CommandResult {
 
 // CommandResultBytes represents the results of a Command with a byte slice result.
 func CommandResultBytes(b []byte) *CommandResult {
+	if b == nil {
+		return &CommandResult{}
+	}
+
 	return &CommandResult{
 		Val: [][]byte{
 			b,
@@ -170,6 +174,10 @@ func CommandResultString(str string) *CommandResult {
 
 // CommandResultStrings represents a list of string results of a Command.
 func CommandResultStrings(ss []string) *CommandResult {
+	if ss == nil {
+		return &CommandResult{}
+	}
+
 	c := &CommandResult{
 		Val: make([][]byte, len(ss)),
 	}

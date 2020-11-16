@@ -50,11 +50,11 @@ type Config struct {
 	BindTemplate string
 
 	// HTTPPort is the port for clients to use for the HTTP interface.
-	// Defaults to `2380`.
+	// Defaults to `2380`. Set to `-1` to disable.
 	HTTPPort string
 
 	// RedisPort is the port for clients to use for the Redis interface.
-	// Defaults to `2381`.
+	// Defaults to `2381`. Set to `-1` to disable.
 	RedisPort string
 
 	// RaftPort is the port to use for Raft communications between instances.
