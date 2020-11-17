@@ -33,6 +33,7 @@ type Command struct {
 	Args                 [][]byte `json:"args,omitempty"`
 	ReadConsistencyMode  int      `json:"rcm,omitempty"`
 	WriteConsistencyMode int      `json:"wcm,omitempty"`
+	DBIndex              uint16   `json:"dbi,omitempty"`
 }
 
 // Encode will encode the Command.
@@ -253,8 +254,8 @@ func (f *FSM) Apply(l *raft.Log) interface{} {
 // the FSM should be implemented in a fashion that allows for concurrent
 // updates while a snapshot is happening.
 func (f *FSM) Snapshot() (raft.FSMSnapshot, error) {
-	// TODO: finish
-	return nil, nil
+	s := &fsmSnapshot{f.kvStore}
+	return s, nil
 }
 
 // Restore is used to restore an FSM from a snapshot. It is not called
@@ -264,3 +265,20 @@ func (f *FSM) Restore(reader io.ReadCloser) error {
 	// TODO: finish
 	return nil
 }
+
+type fsmSnapshot struct {
+	kvStore storage.Store
+}
+
+// Persist implements raft.FSMSnapshot.
+func (s *fsmSnapshot) Persist(sink raft.SnapshotSink) error {
+	if err := s.kvStore.Snapshot(sink); err != nil {
+		sink.Cancel()
+		return err
+	}
+
+	return sink.Close()
+}
+
+// Release does nothing.
+func (s *fsmSnapshot) Release() {}

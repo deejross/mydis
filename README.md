@@ -43,10 +43,10 @@ Currently supported:
 
 # TODO
 * KV API for higher-level Redis-like operations
-* Snapshot & Restore
+* Export & Import (separate from Raft snapshot/restore: backend storage agnostic to allow for migrating between backends)
 * Go API client (for when embedded into an application)
 * HTTP API
 * Redis API (https://github.com/tidwall/redcon)
 * Authentication with tokens that can be limited to certain key prefixes (ACLs)
 * Raft/RPC symetric encryption
-* Additional storage backends (perhaps BadgerDB?)
+* Additional storage backends (perhaps BadgerDB and goleveldb?)

@@ -73,6 +73,9 @@ func NewCluster(config *Config) (*Cluster, error) {
 		},
 	}
 
+	// add current instance information to log output
+	log = log.With("source", net.JoinHostPort(config.BindAddress, config.RaftPort))
+
 	if err := c.initDataDir(); err != nil {
 		return nil, err
 	}
@@ -98,23 +101,55 @@ func NewCluster(config *Config) (*Cluster, error) {
 		break
 	}
 
-	log = log.With("source", net.JoinHostPort(config.BindAddress, config.RPCPort))
-
 	return c, nil
 }
 
 // Shutdown the this instance in the cluster.
-func (c *Cluster) Shutdown() {
-	c.raft.Shutdown().Error()
+func (c *Cluster) Shutdown() error {
+	if err := c.rpc.Close(); err != nil {
+		return err
+	}
+
+	if err := c.raft.Shutdown().Error(); err != nil {
+		return err
+	}
+
+	if err := c.raftTransport.Close(); err != nil {
+		return err
+	}
+
 	close(c.closeCh)
 
-	c.kvStore.Close()
-	c.logStore.Close()
+	if err := c.kvStore.Close(); err != nil {
+		return err
+	}
+	if err := c.logStore.Close(); err != nil {
+		return err
+	}
+
+	log.Info("instance shutdown successful")
+
+	return nil
 }
 
 // IsLeader returns `true` if this instance is the cluster leader.
 func (c *Cluster) IsLeader() bool {
 	return c.raft.State() == raft.Leader
+}
+
+// LeaderAddress returns the address of the cluster leader, or an empty string if the leader is unknown.
+func (c *Cluster) LeaderAddress() string {
+	return string(c.raft.Leader())
+}
+
+// Instances returns the addresses of all known cluster instances.
+func (c *Cluster) Instances() ([]raft.Server, error) {
+	f := c.raft.GetConfiguration()
+	if err := f.Error(); err != nil {
+		return nil, err
+	}
+
+	return f.Configuration().Servers, nil
 }
 
 // OnLeadershipChange sets a function to call whenever the leadership in the cluster changes.
@@ -334,6 +369,15 @@ func (c *Cluster) initCluster() error {
 
 		log.Info("bootstrapping cluster succeeded")
 		return nil
+	} else if hasState && len(c.config.joinAddrs) == 0 {
+		f := c.raft.GetConfiguration()
+		if err := f.Error(); err != nil {
+			return fmt.Errorf("unable to obtain previous configuration of existing cluster: %v", err)
+		}
+
+		for _, server := range f.Configuration().Servers {
+			c.config.joinAddrs = append(c.config.joinAddrs, string(server.Address))
+		}
 	}
 
 	for _, remoteRaftAddr := range c.config.joinAddrs {

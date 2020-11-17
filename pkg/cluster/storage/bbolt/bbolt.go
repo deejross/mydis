@@ -3,6 +3,8 @@ package bbolt
 import (
 	"errors"
 	"fmt"
+	"io"
+	"os"
 	"time"
 
 	"github.com/deejross/mydis/pkg/cluster/storage"
@@ -356,6 +358,30 @@ func (b *BoltStore) Update(fn func(txn storage.Transaction) error) error {
 	return fn(txn)
 }
 
+// View a value in the KV bucket within a read transaction.
+func (b *BoltStore) View(fn func(txn storage.Transaction) error) error {
+	tx, err := b.conn.Begin(false)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	txn := &Transaction{tx}
+	return fn(txn)
+}
+
+// Cursor returns an iterator used for searching and discovering keys.
+func (b *BoltStore) Cursor(fn func(c storage.Cursor)) error {
+	tx, err := b.conn.Begin(false)
+	if err != nil {
+		return nil
+	}
+	defer tx.Rollback()
+
+	fn(tx.Cursor())
+	return nil
+}
+
 // SetUint64 is like Set, but for uint64 values.
 func (b *BoltStore) SetUint64(key []byte, u uint64) error {
 	return b.Set(key, encoding.Uint64ToBytes(u))
@@ -375,4 +401,43 @@ func (b *BoltStore) GetUint64(key []byte) (uint64, error) {
 // and a manual fsync is require outside of the `options.SyncInterval` window.
 func (b *BoltStore) Sync() error {
 	return b.conn.Sync()
+}
+
+// Snapshot writes a snapshot of the store to an io.Writer.
+func (b *BoltStore) Snapshot(w io.WriteCloser) error {
+	tx, err := b.conn.Begin(false)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.WriteTo(w)
+	return err
+}
+
+// Restore a snapshot.
+func (b *BoltStore) Restore(r io.ReadCloser) error {
+	if err := b.Close(); err != nil {
+		return err
+	}
+
+	if err := os.Remove(b.config.Path); err != nil {
+		return err
+	}
+
+	f, err := os.OpenFile(b.config.Path, os.O_CREATE|os.O_RDWR, fileMode)
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(f, r)
+	if err != nil {
+		f.Close()
+		return nil
+	}
+
+	f.Close()
+
+	b, err = NewBoltStore(b.config)
+	return err
 }

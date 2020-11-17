@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -117,7 +118,8 @@ func (r *RPC) handleAccept() {
 	for {
 		conn, err := r.Accept()
 		if err != nil {
-			if err == io.ErrClosedPipe {
+			if strings.HasSuffix(err.Error(), "use of closed network connection") {
+				log.Debug("stopped accepting RPC connections due to RPC port being closed")
 				return
 			}
 			log.Error(fmt.Sprintf("dropping incoming RPC connection: %v", err))
