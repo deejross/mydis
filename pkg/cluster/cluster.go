@@ -68,7 +68,7 @@ func NewCluster(config *Config) (*Cluster, error) {
 		config:       config,
 		closeCh:      make(chan struct{}),
 		readHandlers: map[string]fsm.CommandHandler{},
-		cmdNotFoundHandler: func(cmd *fsm.Command, db storage.Store) *fsm.CommandResult {
+		cmdNotFoundHandler: func(cdb storage.Store, cmd *fsm.Command) *fsm.CommandResult {
 			return fsm.CommandResultError(fmt.Errorf("unknown command: %s", cmd.Op))
 		},
 	}
@@ -185,7 +185,7 @@ func (c *Cluster) Command(cmd *fsm.Command) *fsm.CommandResult {
 	if ok {
 		if cmd.ReadConsistencyMode == fsm.ConsistencyEventual ||
 			(cmd.ReadConsistencyMode == fsm.ConsistencyStrong && c.IsLeader()) {
-			return fn(cmd, c.kvStore)
+			return fn(c.kvStore, cmd)
 		} else if cmd.ReadConsistencyMode == fsm.ConsistencyStrong {
 			return c.rpc.forwardCommandToLeader(cmd)
 		}
@@ -224,7 +224,7 @@ func (c *Cluster) Command(cmd *fsm.Command) *fsm.CommandResult {
 	}
 
 	// this command is unknown, so use the cmdNotFound handler.
-	return c.cmdNotFoundHandler(cmd, c.kvStore)
+	return c.cmdNotFoundHandler(c.kvStore, cmd)
 }
 
 // initDataDir initializes the data storage directory.

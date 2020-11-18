@@ -1,18 +1,12 @@
 package api
 
-import (
-	"fmt"
-	"strconv"
-
-	"github.com/deejross/mydis/pkg/cluster"
-	"github.com/deejross/mydis/pkg/cluster/fsm"
-	"github.com/deejross/mydis/pkg/cluster/storage"
-)
+import "github.com/deejross/mydis/pkg/cluster"
 
 // RegisterHandlers registers all known fsm.CommandHandlers.
 func RegisterHandlers(c *cluster.Cluster) {
 	// read commands
 	c.RegisterHandler("GET", cmdGet, false)
+	c.RegisterHandler("KEYS", cmdKeys, false)
 	// TODO:
 	// DBSIZE
 	// ECHO
@@ -26,7 +20,6 @@ func RegisterHandlers(c *cluster.Cluster) {
 	// HMGET
 	// HSTRLEN
 	// INFO
-	// KEYS
 	// LINDEX
 	// LLEN
 	// LPOS
@@ -56,6 +49,7 @@ func RegisterHandlers(c *cluster.Cluster) {
 
 	// write commands
 	c.RegisterHandler("APPEND", cmdAppend, true)
+	c.RegisterHandler("SET", cmdSet, true)
 	// TODO:
 	// BLPOP
 	// BRPOP
@@ -101,7 +95,6 @@ func RegisterHandlers(c *cluster.Cluster) {
 	// SCARD
 	// SDIFF
 	// SDIFFSTORE
-	// SET
 	// SETNX
 	// SETRANGE
 	// SMOVE
@@ -165,47 +158,4 @@ func RegisterHandlers(c *cluster.Cluster) {
 	// Z*
 	// X*
 	// LATENCY *
-}
-
-func cmdAppend(cmd *fsm.Command, db storage.Store) *fsm.CommandResult {
-	newLen := ""
-
-	err := db.Update(func(t storage.Transaction) error {
-		b, err := t.Get(cmd.Key)
-		if err != nil {
-			return err
-		}
-
-		if b == nil {
-			b = []byte{}
-		}
-
-		if cmd.Args == nil || len(cmd.Args) != 1 {
-			return fmt.Errorf("wrong number of arguments for 'append' command")
-		}
-
-		b = append(b, cmd.Args[0]...)
-
-		if err := t.Set(cmd.Key, b); err != nil {
-			return err
-		}
-
-		newLen = strconv.Itoa(len(b))
-		return t.Commit()
-	})
-
-	if err != nil {
-		return fsm.CommandResultError(err)
-	}
-
-	return fsm.CommandResultString(newLen)
-}
-
-func cmdGet(cmd *fsm.Command, db storage.Store) *fsm.CommandResult {
-	val, err := db.Get(cmd.Key)
-	if err != nil {
-		return fsm.CommandResultError(err)
-	}
-
-	return fsm.CommandResultBytes(val)
 }

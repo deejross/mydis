@@ -191,7 +191,7 @@ func CommandResultStrings(ss []string) *CommandResult {
 }
 
 // CommandHandler is the function used in RegisterHandler.
-type CommandHandler func(*Command, storage.Store) *CommandResult
+type CommandHandler func(storage.Store, *Command) *CommandResult
 
 // FSM (Finite State Machine) object.
 type FSM struct {
@@ -243,7 +243,7 @@ func (f *FSM) Apply(l *raft.Log) interface{} {
 		return CommandResultError(fmt.Errorf("unknown command: %s", cmd.Op)).Encode()
 	}
 
-	result := fn(cmd, f.kvStore)
+	result := fn(f.kvStore, cmd)
 	return result.Encode()
 }
 

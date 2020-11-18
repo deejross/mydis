@@ -29,12 +29,19 @@ func BytesToUint32(b []byte) uint32 {
 	return binary.BigEndian.Uint32(b)
 }
 
+// Uint32ToBytes converts an unsigned 32-bit integer to a byte slice.
+func Uint32ToBytes(u uint32) []byte {
+	b := make([]byte, 4)
+	binary.BigEndian.PutUint32(b, u)
+	return b
+}
+
 // BytesToUint64 converts a byte slice to an unsigned 64-bit integer.
 func BytesToUint64(b []byte) uint64 {
 	return binary.BigEndian.Uint64(b)
 }
 
-// Uint64ToBytes convers an unsigned 64-bit integer to a byte slice.
+// Uint64ToBytes converts an unsigned 64-bit integer to a byte slice.
 func Uint64ToBytes(u uint64) []byte {
 	b := make([]byte, 8)
 	binary.BigEndian.PutUint64(b, u)

@@ -102,7 +102,7 @@ func TestNewCluster(t *testing.T) {
 	instances := GetTestCluster(t, dir1, dir2, dir3)
 
 	t.Run("kvSet", func(t *testing.T) {
-		setHandler := func(cmd *fsm.Command, db storage.Store) *fsm.CommandResult {
+		setHandler := func(db storage.Store, cmd *fsm.Command) *fsm.CommandResult {
 			if cmd.Key == nil || len(cmd.Key) == 0 {
 				return fsm.CommandResultError(fmt.Errorf("key cannot be empty"))
 			}
@@ -145,7 +145,7 @@ func TestNewCluster(t *testing.T) {
 	})
 
 	t.Run("kvGet", func(t *testing.T) {
-		getHandler := func(cmd *fsm.Command, db storage.Store) *fsm.CommandResult {
+		getHandler := func(db storage.Store, cmd *fsm.Command) *fsm.CommandResult {
 			if cmd.Key == nil || len(cmd.Key) == 0 {
 				return fsm.CommandResultError(fmt.Errorf("key cannot be empty"))
 			}
@@ -201,7 +201,7 @@ func TestNewCluster(t *testing.T) {
 		instances := GetTestCluster(t, dir1, dir2, dir3)
 
 		t.Run("kvGet", func(t *testing.T) {
-			getHandler := func(cmd *fsm.Command, db storage.Store) *fsm.CommandResult {
+			getHandler := func(db storage.Store, cmd *fsm.Command) *fsm.CommandResult {
 				if cmd.Key == nil || len(cmd.Key) == 0 {
 					return fsm.CommandResultError(fmt.Errorf("key cannot be empty"))
 				}

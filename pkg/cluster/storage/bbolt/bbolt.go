@@ -1,7 +1,6 @@
 package bbolt
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -29,9 +28,6 @@ var (
 
 	// BucketKV is the bucket name for the KV store.
 	bucketKV = []byte("kv")
-
-	// ErrKeyNotFound indicates the given key does not exist.
-	ErrKeyNotFound = errors.New("not found")
 )
 
 // Config object.
@@ -322,11 +318,6 @@ func (b *BoltStore) Get(k []byte) ([]byte, error) {
 
 	bucket := tx.Bucket(bucketKV)
 	val := bucket.Get(k)
-
-	if val == nil {
-		return nil, ErrKeyNotFound
-	}
-
 	return val, nil
 }
 
@@ -390,7 +381,7 @@ func (b *BoltStore) SetUint64(key []byte, u uint64) error {
 // GetUint64 is like Get, but for uint64 values.
 func (b *BoltStore) GetUint64(key []byte) (uint64, error) {
 	val, err := b.Get(key)
-	if err != nil {
+	if err != nil || val == nil {
 		return 0, err
 	}
 
